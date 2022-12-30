@@ -25,7 +25,7 @@ module wokwi (
   simon simon1 (
       .clk   (CLK),
       .rst   (RST),
-      .ticks_per_milli (10),
+      .ticks_per_milli (50),
       .btn   ({BTN3, BTN2, BTN1, BTN0}),
       .led   ({LED3, LED2, LED1, LED0}),
       .sound (SND)
@@ -40,28 +40,20 @@ module play (
     input wire [9:0] freq,
     output reg sound
 );
-  reg [15:0] tick_counter;
-  reg [9:0] freq_counter;
-  reg overflow;
+  reg [31:0] tick_counter;
+  wire [31:0] ticks_per_second = ticks_per_milli * 1000;
 
   always @(posedge clk) begin
     if (rst) begin
       tick_counter <= 0;
-      freq_counter <= 0;
       sound <= 0;
     end else if (freq == 0) begin
       sound <= 0;
     end else begin
-      tick_counter <= tick_counter + 1;
-      if (tick_counter == ticks_per_milli >> 1) begin
-        tick_counter <= 0;
-        {overflow, freq_counter} <= freq_counter + freq;
-        if (overflow || freq_counter >= 1000) begin
-          sound <= !sound;
-          if (!overflow) begin
-            freq_counter <= freq_counter - 1000;
-          end
-        end
+      tick_counter <= tick_counter + freq;
+      if (tick_counter >= (ticks_per_second >> 1)) begin
+        sound <= !sound;
+        tick_counter <= tick_counter + freq - (ticks_per_second >> 1);
       end
     end
   end
@@ -240,15 +232,22 @@ module simon (
         end
         StateGameOver: begin
           led <= millis_counter[7] ? 4'b1111 : 4'b0000;
-          if (millis_counter == 150) begin
+
+          if (tone_sequence_counter == 4) begin
+            // trembling sound
+            sound_freq <= GAMEOVER_TONES[3] - 16 + millis_counter[4:0];
+            if (millis_counter == 1000) begin
+              tone_sequence_counter <= 7;
+              sound_freq <= 0;
+            end
+          end else if (millis_counter == 300) begin
             if (tone_sequence_counter < 4) begin
               sound_freq <= GAMEOVER_TONES[tone_sequence_counter[1:0]];
               tone_sequence_counter <= tone_sequence_counter + 1;
-            end else begin
-              sound_freq <= 0;
             end
             millis_counter <= 0;
           end
+
           if (btn != 0) begin
             state <= StateInit;
           end
