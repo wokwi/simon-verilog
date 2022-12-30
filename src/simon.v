@@ -132,6 +132,7 @@ module simon (
       next_random <= 0;
       state <= StatePowerOn;
       seq[0] <= 0;
+      led <= 4'b0000;
     end else begin
       tick_counter <= tick_counter + 1;
       next_random  <= next_random + 1;
@@ -144,6 +145,7 @@ module simon (
       case (state)
         StatePowerOn: begin
           led <= 4'b1111;
+          led[millis_counter[9:8]] <= 1'b0;
           // Wait until the user presses some button - the delay will seed the random sequence
           if (btn != 0) begin
             state <= StateInit;
