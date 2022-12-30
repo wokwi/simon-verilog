@@ -147,6 +147,8 @@ module simon (
           // Wait until the user presses some button - the delay will seed the random sequence
           if (btn != 0) begin
             state <= StateInit;
+            led <= 4'b0000;
+            millis_counter <= 0;
           end
         end
         StateInit: begin
@@ -154,7 +156,9 @@ module simon (
           seq_length <= 1;
           seq_counter <= 0;
           tone_sequence_counter <= 0;
-          state <= StatePlay;
+          if (millis_counter == 500) begin
+            state <= StatePlay;
+          end
         end
         StatePlay: begin
           led <= 0;
@@ -249,6 +253,9 @@ module simon (
           end
 
           if (btn != 0) begin
+            led <= 4'b0000;
+            sound_freq <= 0;
+            millis_counter <= 0;
             state <= StateInit;
           end
         end
